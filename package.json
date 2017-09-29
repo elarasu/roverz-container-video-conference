@@ -1,0 +1,41 @@
+{
+  "name": "roverz-container-video-conference",
+  "version": "0.0.1",
+  "description": "video conference container",
+  "private": true,
+  "scripts": {
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "pretest": "./node_modules/.bin/eslint -c .eslintrc --ext .js src",
+    "test": "jest"
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elarasu/roverz-container-video-conference.git"
+  },
+  "keywords": [
+    "video conferencing",
+    "container"
+  ],
+  "author": "elarasu",
+  "jest": {
+    "preset": "react-native",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!react-native|tcomb-form-native|apsl-react-native-button,react-native-device-info|react-clone-referenced-element)"
+    ],
+    "collectCoverage": true,
+    "verbose": true
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts"
+    ]
+  }
+}
