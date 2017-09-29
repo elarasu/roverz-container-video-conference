@@ -1,5 +1,7 @@
 /*
  * Video Conference wrapper
  */
-export * from './src/index';
-
+import VideoConference from './src/react/index.native';
+export {
+    VideoConference
+};
