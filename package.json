@@ -46,6 +46,7 @@
     "react-native-immersive": "1.1.0",
     "react-native-keep-awake": "2.0.5",
     "react-native-prompt": "1.0.0",
+    "react-native-locale-detector": "1.0.1",
     "jitsi-meet-logger": "github:elarasu/jitsi-meet-logger",
     "lib-jitsi-meet": "github:elarasu/lib-jitsi-meet",
     "react-native-webrtc": "github:elarasu/react-native-webrtc",
