@@ -1,9 +1,11 @@
-/* global $, APP, JitsiMeetJS, interfaceConfig */
+/* global $, APP, interfaceConfig */
 
 import { setFilmstripVisibility } from '../../../react/features/filmstrip';
 
 import UIEvents from "../../../service/UI/UIEvents";
 import UIUtil from "../util/UIUtil";
+
+import { sendEvent } from '../../../react/features/analytics';
 
 const Filmstrip = {
     /**
@@ -141,7 +143,7 @@ const Filmstrip = {
             return;
         }
         if (sendAnalytics) {
-            JitsiMeetJS.analytics.sendEvent('toolbar.filmstrip.toggled');
+            sendEvent('toolbar.filmstrip.toggled');
         }
         this.filmstrip.toggleClass("hidden");
 
@@ -194,16 +196,6 @@ const Filmstrip = {
     },
 
     /**
-     * Returns the width of filmstip
-     * @returns {number} width
-     */
-    getFilmstripWidth() {
-        return this.filmstrip.innerWidth()
-            - parseInt(this.filmstrip.css('paddingLeft'), 10)
-            - parseInt(this.filmstrip.css('paddingRight'), 10);
-    },
-
-    /**
      * Calculates the size for thumbnails: local and remote one
      * @returns {*|{localVideo, remoteVideo}}
      */
@@ -249,18 +241,18 @@ const Filmstrip = {
         if(thumbs.localThumb) {
             availableWidth = Math.floor(
                 (videoAreaAvailableWidth - (
-                UIUtil.parseCssInt(
-                    localVideoContainer.css('borderLeftWidth'), 10)
-                + UIUtil.parseCssInt(
-                    localVideoContainer.css('borderRightWidth'), 10)
-                + UIUtil.parseCssInt(
-                    localVideoContainer.css('paddingLeft'), 10)
-                + UIUtil.parseCssInt(
-                    localVideoContainer.css('paddingRight'), 10)
-                + UIUtil.parseCssInt(
-                    localVideoContainer.css('marginLeft'), 10)
-                + UIUtil.parseCssInt(
-                    localVideoContainer.css('marginRight'), 10)))
+                    UIUtil.parseCssInt(
+                        localVideoContainer.css('borderLeftWidth'), 10)
+                    + UIUtil.parseCssInt(
+                        localVideoContainer.css('borderRightWidth'), 10)
+                    + UIUtil.parseCssInt(
+                        localVideoContainer.css('paddingLeft'), 10)
+                    + UIUtil.parseCssInt(
+                        localVideoContainer.css('paddingRight'), 10)
+                    + UIUtil.parseCssInt(
+                        localVideoContainer.css('marginLeft'), 10)
+                    + UIUtil.parseCssInt(
+                        localVideoContainer.css('marginRight'), 10)))
             );
         }
 
@@ -271,18 +263,18 @@ const Filmstrip = {
             let remoteVideoContainer = thumbs.remoteThumbs.eq(0);
             availableWidth = Math.floor(
                 (videoAreaAvailableWidth - numvids * (
-                UIUtil.parseCssInt(
-                    remoteVideoContainer.css('borderLeftWidth'), 10)
-                + UIUtil.parseCssInt(
-                    remoteVideoContainer.css('borderRightWidth'), 10)
-                + UIUtil.parseCssInt(
-                    remoteVideoContainer.css('paddingLeft'), 10)
-                + UIUtil.parseCssInt(
-                    remoteVideoContainer.css('paddingRight'), 10)
-                + UIUtil.parseCssInt(
-                    remoteVideoContainer.css('marginLeft'), 10)
-                + UIUtil.parseCssInt(
-                    remoteVideoContainer.css('marginRight'), 10)))
+                    UIUtil.parseCssInt(
+                        remoteVideoContainer.css('borderLeftWidth'), 10)
+                    + UIUtil.parseCssInt(
+                        remoteVideoContainer.css('borderRightWidth'), 10)
+                    + UIUtil.parseCssInt(
+                        remoteVideoContainer.css('paddingLeft'), 10)
+                    + UIUtil.parseCssInt(
+                        remoteVideoContainer.css('paddingRight'), 10)
+                    + UIUtil.parseCssInt(
+                        remoteVideoContainer.css('marginLeft'), 10)
+                    + UIUtil.parseCssInt(
+                        remoteVideoContainer.css('marginRight'), 10)))
             );
         }
 
@@ -433,11 +425,14 @@ const Filmstrip = {
             promises.push(new Promise((resolve) => {
                 // Let CSS take care of height in vertical filmstrip mode.
                 if (interfaceConfig.VERTICAL_FILMSTRIP) {
-                    resolve();
+                    $('#filmstripLocalVideo').animate({
+                        // adds 4 px because of small video 2px border
+                        width: local.thumbWidth + 4
+                    }, this._getAnimateOptions(animate, resolve));
                 } else {
                     this.filmstrip.animate({
-                        // adds 2 px because of small video 1px border
-                        height: remote.thumbHeight + 2
+                        // adds 4 px because of small video 2px border
+                        height: remote.thumbHeight + 4
                     }, this._getAnimateOptions(animate, resolve));
                 }
             }));

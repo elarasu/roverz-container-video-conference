@@ -1,7 +1,10 @@
-/* global APP, $, JitsiMeetJS, interfaceConfig */
+/* global APP, $, interfaceConfig */
 
 import { toggleDialog } from '../../react/features/base/dialog';
+import { sendEvent } from '../../react/features/analytics';
 import { SpeakerStats } from '../../react/features/speaker-stats';
+
+const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 /**
  * The reference to the shortcut dialogs when opened.
@@ -20,20 +23,21 @@ function initGlobalShortcuts() {
     });
 
     KeyboardShortcut.registerShortcut("?", null, function() {
-        JitsiMeetJS.analytics.sendEvent("shortcut.shortcut.help");
+        sendEvent("shortcut.shortcut.help");
         showKeyboardShortcutsPanel(true);
     }, "keyboardShortcuts.toggleShortcuts");
 
     // register SPACE shortcut in two steps to insure visibility of help message
     KeyboardShortcut.registerShortcut(" ", null, function() {
-        JitsiMeetJS.analytics.sendEvent("shortcut.talk.clicked");
+        sendEvent("shortcut.talk.clicked");
+        logger.log('Talk shortcut pressed');
         APP.conference.muteAudio(true);
     });
     KeyboardShortcut._addShortcutToHelp("SPACE","keyboardShortcuts.pushToTalk");
 
     if(!interfaceConfig.filmStripOnly) {
         KeyboardShortcut.registerShortcut("T", null, () => {
-            JitsiMeetJS.analytics.sendEvent("shortcut.speakerStats.clicked");
+            sendEvent("shortcut.speakerStats.clicked");
             APP.store.dispatch(toggleDialog(SpeakerStats, {
                 conference: APP.conference
             }));
@@ -118,8 +122,11 @@ const KeyboardShortcut = {
                 $(":focus").is("textarea"))) {
                 var key = self._getKeyboardKey(e).toUpperCase();
                 if(key === " ") {
-                    if(APP.conference.isLocalAudioMuted())
+                    if(APP.conference.isLocalAudioMuted()) {
+                        sendEvent("shortcut.talk.released");
+                        logger.log('Talk shortcut released');
                         APP.conference.muteAudio(false);
+                    }
                 }
             }
         };
@@ -144,10 +151,11 @@ const KeyboardShortcut = {
      * @param helpDescription the description of the shortcut that would appear
      * in the help menu
      */
-    registerShortcut: function( shortcutChar,
-                                shortcutAttr,
-                                exec,
-                                helpDescription) {
+    registerShortcut(
+            shortcutChar,
+            shortcutAttr,
+            exec,
+            helpDescription) {
         _shortcuts[shortcutChar] = {
             character: shortcutChar,
             shortcutAttr: shortcutAttr,
@@ -199,9 +207,9 @@ const KeyboardShortcut = {
         if (typeof e.key === "string") {
             return e.key;
         }
-        if (e.type === "keypress" && (
-                (e.which >= 32 && e.which <= 126) ||
-                (e.which >= 160 && e.which <= 255) )) {
+        if (e.type === "keypress"
+                && ((e.which >= 32 && e.which <= 126)
+                    || (e.which >= 160 && e.which <= 255) )) {
             return String.fromCharCode(e.which);
         }
         // try to fallback (0-9A-Za-z and QWERTY keyboard)

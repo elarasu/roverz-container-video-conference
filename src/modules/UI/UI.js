@@ -1,10 +1,8 @@
-/* global APP, JitsiMeetJS, $, config, interfaceConfig */
+/* global APP, $, config, interfaceConfig */
 
 const logger = require("jitsi-meet-logger").getLogger(__filename);
 
 var UI = {};
-
-import _ from 'lodash';
 
 import Chat from "./side_pannels/chat/Chat";
 import SidePanels from "./side_pannels/SidePanels";
@@ -21,13 +19,18 @@ import VideoLayout from "./videolayout/VideoLayout";
 import Filmstrip from "./videolayout/Filmstrip";
 import SettingsMenu from "./side_pannels/settings/SettingsMenu";
 import Profile from "./side_pannels/profile/Profile";
-import Settings from "./../settings/Settings";
 
-import { updateDeviceList } from '../../react/features/base/devices';
 import {
     openDeviceSelectionDialog
 } from '../../react/features/device-selection';
+import { updateDeviceList } from '../../react/features/base/devices';
+import { JitsiTrackErrors } from '../../react/features/base/lib-jitsi-meet';
+import { getLocalParticipant } from '../../react/features/base/participants';
 import { openDisplayNamePrompt } from '../../react/features/display-name';
+import {
+    maybeShowNotificationWithDoNotDisplay,
+    setNotificationsEnabled
+} from '../../react/features/notifications';
 import {
     checkAutoEnableDesktopSharing,
     clearButtonPopup,
@@ -37,13 +40,8 @@ import {
     showDialPadButton,
     showEtherpadButton,
     showSharedVideoButton,
-    showDialOutButton,
     showToolbox
 } from '../../react/features/toolbox';
-import {
-    maybeShowNotificationWithDoNotDisplay,
-    setNotificationsEnabled
-} from '../../react/features/notifications';
 
 var EventEmitter = require("events");
 UI.messageHandler = messageHandler;
@@ -57,35 +55,38 @@ let sharedVideoManager;
 
 let followMeHandler;
 
-const TrackErrors = JitsiMeetJS.errors.track;
-
 const JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP = {
     microphone: {},
     camera: {}
 };
 
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.UNSUPPORTED_RESOLUTION]
-    = "dialog.cameraUnsupportedResolutionError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.GENERAL]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+    .camera[JitsiTrackErrors.UNSUPPORTED_RESOLUTION]
+        = "dialog.cameraUnsupportedResolutionError";
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[JitsiTrackErrors.GENERAL]
     = "dialog.cameraUnknownError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.PERMISSION_DENIED]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[JitsiTrackErrors.PERMISSION_DENIED]
     = "dialog.cameraPermissionDeniedError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.NOT_FOUND]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[JitsiTrackErrors.NOT_FOUND]
     = "dialog.cameraNotFoundError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.CONSTRAINT_FAILED]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[JitsiTrackErrors.CONSTRAINT_FAILED]
     = "dialog.cameraConstraintFailedError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.NO_DATA_FROM_SOURCE]
-    = "dialog.cameraNotSendingData";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.GENERAL]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+    .camera[JitsiTrackErrors.NO_DATA_FROM_SOURCE]
+        = "dialog.cameraNotSendingData";
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[JitsiTrackErrors.GENERAL]
     = "dialog.micUnknownError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.PERMISSION_DENIED]
-    = "dialog.micPermissionDeniedError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.NOT_FOUND]
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+    .microphone[JitsiTrackErrors.PERMISSION_DENIED]
+        = "dialog.micPermissionDeniedError";
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[JitsiTrackErrors.NOT_FOUND]
     = "dialog.micNotFoundError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.CONSTRAINT_FAILED]
-    = "dialog.micConstraintFailedError";
-JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.NO_DATA_FROM_SOURCE]
-    = "dialog.micNotSendingData";
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+    .microphone[JitsiTrackErrors.CONSTRAINT_FAILED]
+        = "dialog.micConstraintFailedError";
+JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+    .microphone[JitsiTrackErrors.NO_DATA_FROM_SOURCE]
+        = "dialog.micNotSendingData";
 
 /**
  * Toggles the application in and out of full screen mode
@@ -198,7 +199,8 @@ UI.setLocalRaisedHandStatus
  * Initialize conference UI.
  */
 UI.initConference = function () {
-    let id = APP.conference.getMyUserId();
+    const { dispatch, getState } = APP.store;
+    const { avatarID, email, id, name } = getLocalParticipant(getState);
 
     // Update default button states before showing the toolbar
     // if local role changes buttons state will be again updated.
@@ -206,21 +208,20 @@ UI.initConference = function () {
 
     UI.showToolbar();
 
-    let displayName = config.displayJids ? id : Settings.getDisplayName();
+    let displayName = config.displayJids ? id : name;
 
     if (displayName) {
         UI.changeDisplayName('localVideoContainer', displayName);
     }
 
     // Make sure we configure our avatar id, before creating avatar for us
-    let email = Settings.getEmail();
     if (email) {
         UI.setUserEmail(id, email);
     } else {
-        UI.setUserAvatarID(id, Settings.getAvatarId());
+        UI.setUserAvatarID(id, avatarID);
     }
 
-    APP.store.dispatch(checkAutoEnableDesktopSharing());
+    dispatch(checkAutoEnableDesktopSharing());
 
     // FollowMe attempts to copy certain aspects of the moderator's UI into the
     // other participants' UI. Consequently, it needs (1) read and write access
@@ -234,7 +235,9 @@ UI.mucJoined = function () {
 
     // Update local video now that a conference is joined a user ID should be
     // set.
-    UI.changeDisplayName('localVideoContainer', APP.settings.getDisplayName());
+    UI.changeDisplayName(
+        'localVideoContainer',
+        APP.conference.getLocalDisplayName());
 };
 
 /***
@@ -274,14 +277,6 @@ UI.start = function () {
 
     sharedVideoManager = new SharedVideoManager(eventEmitter);
     if (!interfaceConfig.filmStripOnly) {
-        let throttledShowToolbar
-            = _.throttle(
-                    () => UI.showToolbar(),
-                    100,
-                    { leading: true, trailing: false });
-
-        $("#videoconference_page").mousemove(throttledShowToolbar);
-
         // Initialise the recording module.
         if (config.enableRecording) {
             Recording.init(eventEmitter, config.recordingType);
@@ -474,7 +469,6 @@ UI.onPeerVideoTypeChanged
 UI.updateLocalRole = isModerator => {
     VideoLayout.showModeratorIndicator();
 
-    APP.store.dispatch(showDialOutButton(isModerator));
     APP.store.dispatch(showSharedVideoButton());
 
     Recording.showRecordingButton(isModerator);
@@ -1085,7 +1079,8 @@ UI.showMicErrorNotification = function (micError) {
     const micJitsiTrackErrorMsg
         = JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[name];
     const micErrorMsg = micJitsiTrackErrorMsg
-        || JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.GENERAL];
+        || JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+            .microphone[JitsiTrackErrors.GENERAL];
     const additionalMicErrorMsg = micJitsiTrackErrorMsg ? null : message;
 
     APP.store.dispatch(maybeShowNotificationWithDoNotDisplay(
@@ -1095,7 +1090,7 @@ UI.showMicErrorNotification = function (micError) {
             messageKey: micErrorMsg,
             showToggle: Boolean(micJitsiTrackErrorMsg),
             subtitleKey: 'dialog.micErrorPresent',
-            titleKey: name === TrackErrors.PERMISSION_DENIED
+            titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
                 ? 'deviceError.microphonePermission' : 'dialog.error',
             toggleLabelKey: 'dialog.doNotShowWarningAgain'
         }));
@@ -1120,7 +1115,8 @@ UI.showCameraErrorNotification = function (cameraError) {
     const cameraJitsiTrackErrorMsg =
         JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[name];
     const cameraErrorMsg = cameraJitsiTrackErrorMsg
-        || JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[TrackErrors.GENERAL];
+        || JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP
+            .camera[JitsiTrackErrors.GENERAL];
     const additionalCameraErrorMsg = cameraJitsiTrackErrorMsg ? null : message;
 
     APP.store.dispatch(maybeShowNotificationWithDoNotDisplay(
@@ -1130,7 +1126,7 @@ UI.showCameraErrorNotification = function (cameraError) {
             messageKey: cameraErrorMsg,
             showToggle: Boolean(cameraJitsiTrackErrorMsg),
             subtitleKey: 'dialog.cameraErrorPresent',
-            titleKey: name === TrackErrors.PERMISSION_DENIED
+            titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
                 ? 'deviceError.cameraPermission' : 'dialog.error',
             toggleLabelKey: 'dialog.doNotShowWarningAgain'
         }));
@@ -1248,11 +1244,7 @@ const UIListeners = new Map([
     ], [
         UIEvents.TOGGLE_PROFILE,
         () => {
-            const {
-                isGuest
-            } = APP.store.getState()['features/jwt'];
-
-            isGuest && UI.toggleSidePanel('profile_container');
+            UI.toggleSidePanel('profile_container');
         }
     ], [
         UIEvents.TOGGLE_FILMSTRIP,

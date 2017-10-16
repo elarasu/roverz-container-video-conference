@@ -1,5 +1,4 @@
-/* global $, APP, YT, onPlayerReady, onPlayerStateChange, onPlayerError,
-JitsiMeetJS */
+/* global $, APP, YT, onPlayerReady, onPlayerStateChange, onPlayerError */
 const logger = require("jitsi-meet-logger").getLogger(__filename);
 
 import UIUtil from '../util/UIUtil';
@@ -9,6 +8,7 @@ import VideoLayout from "../videolayout/VideoLayout";
 import LargeContainer from '../videolayout/LargeContainer';
 import Filmstrip from '../videolayout/Filmstrip';
 
+import { sendEvent } from '../../../react/features/analytics';
 import {
     participantJoined,
     participantLeft
@@ -79,29 +79,30 @@ export default class SharedVideoManager {
                     url => {
                         this.emitter.emit(
                             UIEvents.UPDATE_SHARED_VIDEO, url, 'start');
-                        JitsiMeetJS.analytics.sendEvent('sharedvideo.started');
+                        sendEvent('sharedvideo.started');
                     },
                     err => {
                         logger.log('SHARED VIDEO CANCELED', err);
-                        JitsiMeetJS.analytics.sendEvent('sharedvideo.canceled');
+                        sendEvent('sharedvideo.canceled');
                     }
             );
             return;
         }
 
         if(APP.conference.isLocalId(this.from)) {
-            showStopVideoPropmpt().then(() => {
+            showStopVideoPropmpt().then(
+                () => {
                     // make sure we stop updates for playing before we send stop
                     // if we stop it after receiving self presence, we can end
                     // up sending stop playing, and on the other end it will not
                     // stop
-                    if(this.intervalId) {
-                         clearInterval(this.intervalId);
-                         this.intervalId = null;
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
                     }
                     this.emitter.emit(
                         UIEvents.UPDATE_SHARED_VIDEO, this.url, 'stop');
-                    JitsiMeetJS.analytics.sendEvent('sharedvideo.stoped');
+                    sendEvent('sharedvideo.stoped');
                 },
                 () => {});
         } else {
@@ -113,7 +114,7 @@ export default class SharedVideoManager {
                     dialog = null;
                 }
             );
-            JitsiMeetJS.analytics.sendEvent('sharedvideo.alreadyshared');
+            sendEvent('sharedvideo.alreadyshared');
         }
     }
 
@@ -217,7 +218,7 @@ export default class SharedVideoManager {
                 self.smartAudioMute();
             } else if (event.data == YT.PlayerState.PAUSED) {
                 self.smartAudioUnmute();
-                JitsiMeetJS.analytics.sendEvent('sharedvideo.paused');
+                sendEvent('sharedvideo.paused');
             }
             self.fireSharedVideoEvent(event.data == YT.PlayerState.PAUSED);
         };
@@ -247,7 +248,7 @@ export default class SharedVideoManager {
             else if (event.data.volume <=0 || event.data.muted) {
                 self.smartAudioUnmute();
             }
-            JitsiMeetJS.analytics.sendEvent('sharedvideo.volumechanged');
+            sendEvent('sharedvideo.volumechanged');
         };
 
         window.onPlayerReady = function(event) {
@@ -472,7 +473,7 @@ export default class SharedVideoManager {
 
                 this.emitter.emit(
                     UIEvents.UPDATE_SHARED_VIDEO, null, 'removed');
-        });
+            });
 
         APP.store.dispatch(participantLeft(this.url));
 
@@ -532,7 +533,8 @@ export default class SharedVideoManager {
         if (APP.conference.isLocalAudioMuted()
             && !this.mutedWithUserInteraction
             && !this.isSharedVideoVolumeOn()) {
-
+            sendEvent("sharedvideo.audio.unmuted");
+            logger.log('Shared video: audio unmuted');
             this.emitter.emit(UIEvents.AUDIO_MUTED, false, false);
             this.showMicMutedPopup(false);
         }
@@ -545,7 +547,8 @@ export default class SharedVideoManager {
     smartAudioMute() {
         if (!APP.conference.isLocalAudioMuted()
             && this.isSharedVideoVolumeOn()) {
-
+            sendEvent("sharedvideo.audio.muted");
+            logger.log('Shared video: audio muted');
             this.emitter.emit(UIEvents.AUDIO_MUTED, true, false);
             this.showMicMutedPopup(true);
         }

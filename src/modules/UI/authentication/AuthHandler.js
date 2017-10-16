@@ -1,12 +1,14 @@
 /* global APP, config, JitsiMeetJS, Promise */
 
 import { openConnection } from '../../../connection';
-import { setJWT } from '../../../react/features/jwt';
+import { setJWT } from '../../../react/features/base/jwt';
+import {
+    JitsiConnectionErrors
+} from '../../../react/features/base/lib-jitsi-meet';
 import UIUtil from '../util/UIUtil';
 
 import LoginDialog from './LoginDialog';
 
-const ConnectionErrors = JitsiMeetJS.errors.connection;
 const logger = require("jitsi-meet-logger").getLogger(__filename);
 
 let externalAuthWindow;
@@ -111,8 +113,7 @@ function initJWTTokenListener(room) {
                                 logger.error(
                                     "Authentication failed: ", err, errCode);
                                 unregister();
-                            }
-                        );
+                            });
                     }).catch(function (error, code) {
                         unregister();
                         connection.disconnect();
@@ -248,7 +249,7 @@ function showXmppPasswordPrompt(roomName, connect) {
                     authDialog.close();
                     resolve(connection);
                 }, function (err) {
-                    if (err === ConnectionErrors.PASSWORD_REQUIRED) {
+                    if (err === JitsiConnectionErrors.PASSWORD_REQUIRED) {
                         authDialog.displayError(err);
                     } else {
                         authDialog.close();
@@ -267,7 +268,7 @@ function showXmppPasswordPrompt(roomName, connect) {
  * @param {string} [roomName] name of the conference room
  * @param {function(id, password, roomName)} [connect] function that returns
  * a Promise which resolves with JitsiConnection or fails with one of
- * ConnectionErrors.
+ * JitsiConnectionErrors.
  * @returns {Promise<JitsiConnection>}
  */
 function requestAuth(roomName, connect) {

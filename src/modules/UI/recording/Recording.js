@@ -1,4 +1,4 @@
-/* global APP, $, config, interfaceConfig, JitsiMeetJS */
+/* global APP, $, config, interfaceConfig */
 /*
  * Copyright @ 2015 Atlassian Pty Ltd
  *
@@ -20,14 +20,18 @@ import UIEvents from "../../../service/UI/UIEvents";
 import UIUtil from '../util/UIUtil';
 import VideoLayout from '../videolayout/VideoLayout';
 
+import {
+    JitsiRecordingStatus
+} from '../../../react/features/base/lib-jitsi-meet';
+import {
+    sendEvent
+} from '../../../react/features/analytics';
 import { setToolboxEnabled } from '../../../react/features/toolbox';
 import { setNotificationsEnabled } from '../../../react/features/notifications';
 import {
     hideRecordingLabel,
     updateRecordingState
 } from '../../../react/features/recording';
-
-const Status = JitsiMeetJS.constants.recordingStatus;
 
 /**
  * Translation keys to use for display in the UI when recording the conference
@@ -240,11 +244,11 @@ function _showStopRecordingPrompt(recordingType) {
 
 /**
  * Checks whether if the given status is either PENDING or RETRYING
- * @param status {Status} Jibri status to be checked
+ * @param status {JitsiRecordingStatus} Jibri status to be checked
  * @returns {boolean} true if the condition is met or false otherwise.
  */
 function isStartingStatus(status) {
-    return status === Status.PENDING || status === Status.RETRYING;
+    return status === JitsiRecordingStatus.PENDING || status === JitsiRecordingStatus.RETRYING;
 }
 
 /**
@@ -340,12 +344,12 @@ var Recording = {
         let labelDisplayConfiguration;
 
         switch (recordingState) {
-        case Status.ON:
-        case Status.RETRYING: {
+        case JitsiRecordingStatus.ON:
+        case JitsiRecordingStatus.RETRYING: {
             labelDisplayConfiguration = {
                 centered: false,
                 key: this.recordingOnKey,
-                showSpinner: recordingState === Status.RETRYING
+                showSpinner: recordingState === JitsiRecordingStatus.RETRYING
             };
 
             this._setToolbarButtonToggled(true);
@@ -353,14 +357,14 @@ var Recording = {
             break;
         }
 
-        case Status.OFF:
-        case Status.BUSY:
-        case Status.FAILED:
-        case Status.UNAVAILABLE: {
+        case JitsiRecordingStatus.OFF:
+        case JitsiRecordingStatus.BUSY:
+        case JitsiRecordingStatus.FAILED:
+        case JitsiRecordingStatus.UNAVAILABLE: {
             const wasInStartingStatus = isStartingStatus(oldState);
 
             // We don't want UI changes if this is an availability change.
-            if (oldState !== Status.ON && !wasInStartingStatus) {
+            if (oldState !== JitsiRecordingStatus.ON && !wasInStartingStatus) {
                 APP.store.dispatch(updateRecordingState({ recordingState }));
                 return;
             }
@@ -381,7 +385,7 @@ var Recording = {
             break;
         }
 
-        case Status.PENDING: {
+        case JitsiRecordingStatus.PENDING: {
             labelDisplayConfiguration = {
                 centered: true,
                 key: this.recordingPendingKey
@@ -392,7 +396,7 @@ var Recording = {
             break;
         }
 
-        case Status.ERROR: {
+        case JitsiRecordingStatus.ERROR: {
             labelDisplayConfiguration = {
                 centered: true,
                 key: this.recordingErrorKey
@@ -404,7 +408,7 @@ var Recording = {
         }
 
         // Return an empty label display configuration to indicate no label
-        // should be displayed. The Status.AVAIABLE case is handled here.
+        // should be displayed. The JitsiRecordingStatus.AVAIABLE case is handled here.
         default: {
             labelDisplayConfiguration = null;
         }
@@ -436,39 +440,39 @@ var Recording = {
             return;
         }
 
-        JitsiMeetJS.analytics.sendEvent('recording.clicked');
+        sendEvent('recording.clicked');
         switch (this.currentState) {
-        case Status.ON:
-        case Status.RETRYING:
-        case Status.PENDING: {
+        case JitsiRecordingStatus.ON:
+        case JitsiRecordingStatus.RETRYING:
+        case JitsiRecordingStatus.PENDING: {
             _showStopRecordingPrompt(this.recordingType).then(
                 () => {
                     this.eventEmitter.emit(UIEvents.RECORDING_TOGGLED);
-                    JitsiMeetJS.analytics.sendEvent('recording.stopped');
+                    sendEvent('recording.stopped');
                 },
                 () => {});
             break;
         }
-        case Status.AVAILABLE:
-        case Status.OFF: {
+        case JitsiRecordingStatus.AVAILABLE:
+        case JitsiRecordingStatus.OFF: {
             if (this.recordingType === 'jibri')
                 _requestLiveStreamId().then(streamId => {
                     this.eventEmitter.emit(
                         UIEvents.RECORDING_TOGGLED,
                         { streamId });
-                    JitsiMeetJS.analytics.sendEvent('recording.started');
+                    sendEvent('recording.started');
                 }).catch(reason => {
                     if (reason !== APP.UI.messageHandler.CANCEL)
                         logger.error(reason);
                     else
-                        JitsiMeetJS.analytics.sendEvent('recording.canceled');
+                        sendEvent('recording.canceled');
                 });
             else {
                 if (this.predefinedToken) {
                     this.eventEmitter.emit(
                         UIEvents.RECORDING_TOGGLED,
                         { token: this.predefinedToken });
-                    JitsiMeetJS.analytics.sendEvent('recording.started');
+                    sendEvent('recording.started');
                     return;
                 }
 
@@ -476,17 +480,17 @@ var Recording = {
                     this.eventEmitter.emit(
                         UIEvents.RECORDING_TOGGLED,
                         { token });
-                    JitsiMeetJS.analytics.sendEvent('recording.started');
+                    sendEvent('recording.started');
                 }).catch(reason => {
                     if (reason !== APP.UI.messageHandler.CANCEL)
                         logger.error(reason);
                     else
-                        JitsiMeetJS.analytics.sendEvent('recording.canceled');
+                        sendEvent('recording.canceled');
                 });
             }
             break;
         }
-        case Status.BUSY: {
+        case JitsiRecordingStatus.BUSY: {
             dialog = APP.UI.messageHandler.openMessageDialog(
                 this.recordingTitle,
                 this.recordingBusy,
