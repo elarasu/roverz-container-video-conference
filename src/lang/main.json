@@ -1,8 +1,6 @@
 {
-    "contactlist": "__pcount__ Members",
-    "addParticipants": "Share the link",
-    "roomLocked": "Callers must enter a password",
-    "roomUnlocked": "Anyone with the link can join",
+    "contactlist": "__count__ Member",
+    "contactlist_plural": "__count__ Members",
     "passwordSetRemotely": "set by another member",
     "connectionsettings": "Connection Settings",
     "poweredby": "powered by",
@@ -200,7 +198,15 @@
         "bandwidth": "Estimated bandwidth:",
         "na": "Come back here for connection information once the conference starts",
         "peer_to_peer": " (p2p)",
-        "turn": " (turn)"
+        "turn": " (turn)",
+        "quality": {
+            "good": "Good",
+            "inactive": "Inactive",
+            "lost": "Lost",
+            "nonoptimal": "Nonoptimal",
+            "poor": "Poor"
+        },
+        "status": "Connection:"
     },
     "notify": {
         "disconnected": "disconnected",
@@ -440,6 +446,7 @@
         "hidePassword": "Hide password",
         "inviteTo": "Invite people to __conferenceName__",
         "invitedYouTo": "__userName__ has invited you to the __inviteURL__ conference",
+        "invitePeople": "Invite people",
         "locked": "This call is locked. New callers must have the link and enter the password to join.",
         "showPassword": "Show password",
         "unlocked": "This call is unlocked. Any new caller with the link may join the call."
@@ -461,7 +468,7 @@
     },
     "dialOut": {
         "dial": "Dial",
-        "dialOut": "Call a phone number",
+        "dialOut": "Call a #",
         "statusMessage": "is now __status__",
         "enterPhone": "Enter phone number",
         "phoneNotAllowed": "Oh, we don't support that destination yet! Sorry!"
@@ -490,5 +497,11 @@
         "rateExperience": "Please rate your meeting experience.",
         "veryBad": "Very Bad",
         "veryGood": "Very Good"
+    },
+    "info": {
+        "copy": "Copy link",
+        "invite": "Invite in __app__",
+        "title": "Call access info",
+        "tooltip": "Get access info about the meeting"
     }
 }
