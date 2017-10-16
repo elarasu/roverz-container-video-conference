@@ -1,7 +1,14 @@
-import JitsiMeetJS, { isAnalyticsEnabled } from '../base/lib-jitsi-meet';
+// @flow
+
+import JitsiMeetJS, {
+    analytics,
+    isAnalyticsEnabled
+} from '../base/lib-jitsi-meet';
 import { getJitsiMeetGlobalNS, loadScript } from '../base/util';
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
+
+export const sendEvent = analytics.sendEvent.bind(analytics);
 
 /**
  * Loads the analytics scripts and inits JitsiMeetJS.analytics by setting
@@ -13,15 +20,11 @@ const logger = require('jitsi-meet-logger').getLogger(__filename);
  * is being dispatched.
  * @returns {void}
  */
-export function initAnalytics({ getState }) {
+export function initAnalytics({ getState }: { getState: Function }) {
     getJitsiMeetGlobalNS().analyticsHandlers = [];
+    window.analyticsHandlers = []; // Legacy support.
 
-    // legacy support for old analytics location
-    window.analyticsHandlers = [];
-
-    const { analytics } = JitsiMeetJS;
-
-    if (!isAnalyticsEnabled({ getState }) || !analytics) {
+    if (!analytics || !isAnalyticsEnabled(getState)) {
         return;
     }
 
@@ -38,12 +41,12 @@ export function initAnalytics({ getState }) {
 
     _loadHandlers(analyticsScriptUrls, handlerConstructorOptions)
         .then(handlers => {
-            const permanentProperties = {
-                roomName: getState()['features/base/conference'].room,
+            const state = getState();
+            const permanentProperties: Object = {
+                roomName: state['features/base/conference'].room,
                 userAgent: navigator.userAgent
             };
-
-            const { group, server } = getState()['features/jwt'];
+            const { group, server } = state['features/base/jwt'];
 
             if (server) {
                 permanentProperties.server = server;
@@ -52,13 +55,14 @@ export function initAnalytics({ getState }) {
                 permanentProperties.group = group;
             }
 
-            // optionally include local deployment information based on
-            // the contents of window.config.deploymentInfo
-            if (config.deploymentInfo) {
-                for (const key in config.deploymentInfo) {
-                    if (config.deploymentInfo.hasOwnProperty(key)) {
-                        permanentProperties[key]
-                            = config.deploymentInfo[key];
+            // Optionally, include local deployment information based on the
+            // contents of window.config.deploymentInfo.
+            const { deploymentInfo } = config;
+
+            if (deploymentInfo) {
+                for (const key in deploymentInfo) {
+                    if (deploymentInfo.hasOwnProperty(key)) {
+                        permanentProperties[key] = deploymentInfo[key];
                     }
                 }
             }
@@ -115,23 +119,22 @@ function _loadHandlers(scriptURLs, handlerConstructorOptions) {
 
         if (analyticsHandlers.length === 0) {
             throw new Error('No analytics handlers available');
-        } else {
-            const handlers = [];
-
-            for (const Handler of analyticsHandlers) {
-                // catch any error while loading to avoid
-                // skipping analytics in case of multiple scripts
-                try {
-                    handlers.push(new Handler(handlerConstructorOptions));
-                } catch (error) {
-                    logger.warn(`Error creating analytics handler: ${error}`);
-                }
-            }
-
-            logger.debug(`Loaded ${handlers.length} analytics handlers`);
-
-            return handlers;
         }
+
+        const handlers = [];
+
+        for (const Handler of analyticsHandlers) {
+            // Catch any error while loading to avoid skipping analytics in case
+            // of multiple scripts.
+            try {
+                handlers.push(new Handler(handlerConstructorOptions));
+            } catch (error) {
+                logger.warn(`Error creating analytics handler: ${error}`);
+            }
+        }
+
+        logger.debug(`Loaded ${handlers.length} analytics handlers`);
+
+        return handlers;
     });
 }
-

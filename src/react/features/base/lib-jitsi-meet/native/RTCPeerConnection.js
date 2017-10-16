@@ -18,7 +18,7 @@ import { RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
  */
 export default function _RTCPeerConnection(...args) {
 
-    /* eslint-disable no-invalid-this */
+    /* eslint-disable indent, no-invalid-this */
 
     RTCPeerConnection.apply(this, args);
 
@@ -44,7 +44,7 @@ export default function _RTCPeerConnection(...args) {
         }
     });
 
-    /* eslint-enable no-invalid-this */
+    /* eslint-enable indent, no-invalid-this */
 }
 
 _RTCPeerConnection.prototype = Object.create(RTCPeerConnection.prototype);
@@ -114,7 +114,7 @@ function _LOGE(...args) {
 /**
  * Adapts react-native-webrtc's {@link RTCPeerConnection#setRemoteDescription}
  * implementation which uses the deprecated, callback-based version to the
- * <tt>Promise</tt>-based version.
+ * {@code Promise}-based version.
  *
  * @param {RTCSessionDescription} sessionDescription - The RTCSessionDescription
  * which specifies the configuration of the remote end of the connection.

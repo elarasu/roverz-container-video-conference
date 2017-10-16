@@ -1,10 +1,11 @@
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import { sendEvent } from '../../analytics';
 import { getInviteURL } from '../../base/connection';
 import { Dialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
-import JitsiMeetJS from '../../base/lib-jitsi-meet';
 import { getLocalParticipant, PARTICIPANT_ROLE } from '../../base/participants';
 
 import DialInNumbersForm from './DialInNumbersForm';
@@ -26,22 +27,22 @@ class InviteDialog extends Component {
         /**
          * The redux store representation of the JitsiConference.
          */
-        _conference: React.PropTypes.object,
+        _conference: PropTypes.object,
 
         /**
          * The url for the JitsiConference.
          */
-        _inviteURL: React.PropTypes.string,
+        _inviteURL: PropTypes.string,
 
         /**
          * Whether or not the current user is a conference moderator.
          */
-        _isModerator: React.PropTypes.bool,
+        _isModerator: PropTypes.bool,
 
         /**
          * Invoked to obtain translated strings.
          */
-        t: React.PropTypes.func
+        t: PropTypes.func
     };
 
     /**
@@ -50,7 +51,7 @@ class InviteDialog extends Component {
      * @inheritdoc
      */
     componentWillUnmount() {
-        JitsiMeetJS.analytics.sendEvent('toolbar.invite.close');
+        sendEvent('toolbar.invite.close');
     }
 
     /**

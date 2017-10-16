@@ -1,6 +1,8 @@
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import { sendEvent } from '../../analytics';
 import { translate } from '../../base/i18n';
 import { kickParticipant } from '../../base/participants';
 
@@ -23,22 +25,22 @@ class KickButton extends Component {
          * Invoked to signal the participant with the passed in participantID
          * should be removed from the conference.
          */
-        dispatch: React.PropTypes.func,
+        dispatch: PropTypes.func,
 
         /**
          * Callback to invoke when {@code KickButton} is clicked.
          */
-        onClick: React.PropTypes.func,
+        onClick: PropTypes.func,
 
         /**
          * The ID of the participant linked to the onClick callback.
          */
-        participantID: React.PropTypes.string,
+        participantID: PropTypes.string,
 
         /**
          * Invoked to obtain translated strings.
          */
-        t: React.PropTypes.func
+        t: PropTypes.func
     };
 
     /**
@@ -81,6 +83,13 @@ class KickButton extends Component {
     _onClick() {
         const { dispatch, onClick, participantID } = this.props;
 
+        sendEvent(
+            'remotevideomenu.kick',
+            {
+                value: 1,
+                label: participantID
+            }
+        );
         dispatch(kickParticipant(participantID));
 
         if (onClick) {

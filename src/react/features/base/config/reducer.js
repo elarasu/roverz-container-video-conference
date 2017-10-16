@@ -38,6 +38,7 @@ const INITIAL_RN_STATE = {
     disableAudioLevels: true,
 
     p2p: {
+        disableH264: false,
         preferH264: true
     }
 };
@@ -129,6 +130,8 @@ function _translateLegacyConfig(oldValue: Object) {
         newValue = set(newValue, 'p2p', {});
     }
 
+    /* eslint-disable indent */
+
     // Translate the old config properties into the new config.p2p properties.
     for (const [ oldKey, newKey ]
             of [
@@ -136,6 +139,9 @@ function _translateLegacyConfig(oldValue: Object) {
                 [ 'enableP2P', 'enabled' ],
                 [ 'p2pStunServers', 'stunServers' ]
             ]) {
+
+    /* eslint-enable indent */
+
         if (oldKey in newValue) {
             const v = newValue[oldKey];
 

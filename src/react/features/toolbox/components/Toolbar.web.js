@@ -1,5 +1,6 @@
 /* @flow */
 
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
@@ -30,29 +31,28 @@ class Toolbar extends Component {
         /**
          * Children of current React component.
          */
-        children: React.PropTypes.element,
+        children: PropTypes.element,
 
         /**
          * Toolbar's class name.
          */
-        className: React.PropTypes.string,
+        className: PropTypes.string,
 
         /**
          * Used to dispatch an action when a button is clicked or on mouse
          * out/in event.
          */
-        dispatch: React.PropTypes.func,
+        dispatch: PropTypes.func,
 
         /**
          * Map with toolbar buttons.
          */
-        toolbarButtons: React.PropTypes.instanceOf(Map),
+        toolbarButtons: PropTypes.instanceOf(Map),
 
         /**
          * Indicates the position of the tooltip.
          */
-        tooltipPosition:
-            React.PropTypes.oneOf([ 'bottom', 'left', 'right', 'top' ])
+        tooltipPosition: PropTypes.oneOf([ 'bottom', 'left', 'right', 'top' ])
     };
 
     /**
@@ -123,20 +123,26 @@ class Toolbar extends Component {
      * @private
      * @returns {ReactElement} A toolbar button.
      */
-    _renderToolbarButton(
-                         keyValuePair: Array<*>): ReactElement<*> {
+    _renderToolbarButton(keyValuePair: Array<*>): ReactElement<*> {
         const [ key, button ] = keyValuePair;
 
         if (button.component) {
+
             return (
                 <button.component
                     key = { key }
+                    toggled = { button.toggled }
                     tooltipPosition = { this.props.tooltipPosition } />
             );
         }
 
         const { tooltipPosition } = this.props;
-        const { onClick, onMount, onUnmount } = button;
+        const {
+            childComponent: ChildComponent,
+            onClick,
+            onMount,
+            onUnmount
+        } = button;
         const onClickWithDispatch = (...args) =>
             onClick && onClick(this.props.dispatch, ...args);
 
@@ -147,7 +153,10 @@ class Toolbar extends Component {
                 onClick = { onClickWithDispatch }
                 onMount = { onMount }
                 onUnmount = { onUnmount }
-                tooltipPosition = { tooltipPosition } />
+                tooltipPosition = { tooltipPosition }>
+                { button.html || null }
+                { ChildComponent ? <ChildComponent /> : null }
+            </ToolbarButton>
         );
     }
 }

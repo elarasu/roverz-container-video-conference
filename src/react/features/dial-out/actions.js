@@ -1,4 +1,4 @@
-import { openDialog } from '../../features/base/dialog';
+// @flow
 
 import {
     DIAL_OUT_CANCELED,
@@ -6,8 +6,6 @@ import {
     DIAL_OUT_SERVICE_FAILED,
     PHONE_NUMBER_CHECKED
 } from './actionTypes';
-
-import { DialOutDialog } from './components';
 
 declare var $: Function;
 declare var config: Object;
@@ -29,8 +27,8 @@ export function cancel() {
  * @param {string} dialNumber - The number to dial.
  * @returns {Function}
  */
-export function dial(dialNumber) {
-    return (dispatch, getState) => {
+export function dial(dialNumber: string) {
+    return (dispatch: Dispatch<*>, getState: Function) => {
         const { conference } = getState()['features/base/conference'];
 
         conference.dial(dialNumber);
@@ -43,8 +41,8 @@ export function dial(dialNumber) {
  * @param {string} dialNumber - The dial number to check for validity.
  * @returns {Function}
  */
-export function checkDialNumber(dialNumber) {
-    return (dispatch, getState) => {
+export function checkDialNumber(dialNumber: string) {
+    return (dispatch: Dispatch<*>, getState: Function) => {
         const { dialOutAuthUrl } = getState()['features/base/config'];
 
         if (!dialOutAuthUrl) {
@@ -76,23 +74,13 @@ export function checkDialNumber(dialNumber) {
     };
 }
 
-
-/**
- * Opens the dial-out dialog.
- *
- * @returns {Function}
- */
-export function openDialOutDialog() {
-    return openDialog(DialOutDialog);
-}
-
 /**
  * Sends an ajax request for dial-out country codes.
  *
  * @returns {Function}
  */
 export function updateDialOutCodes() {
-    return (dispatch, getState) => {
+    return (dispatch: Dispatch<*>, getState: Function) => {
         const { dialOutCodesUrl } = getState()['features/base/config'];
 
         if (!dialOutCodesUrl) {

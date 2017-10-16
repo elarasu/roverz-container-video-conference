@@ -1,12 +1,13 @@
 /* @flow */
 
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
-import { Audio } from '../../base/media';
-import { Avatar } from '../../base/participants';
-import { Container, Text } from '../../base/react';
-import UIEvents from '../../../../service/UI/UIEvents';
+import { Audio } from '../../media';
+import { Avatar } from '../../participants';
+import { Container, Text } from '../../react';
+import UIEvents from '../../../../../service/UI/UIEvents';
 
 import styles from './styles';
 
@@ -73,7 +74,7 @@ class CallOverlay extends Component {
      * @static
      */
     static propTypes = {
-        _callee: React.PropTypes.object
+        _callee: PropTypes.object
     };
 
     /**
@@ -334,7 +335,7 @@ function _mapStateToProps(state) {
          * @private
          * @type {Object}
          */
-        _callee: state['features/jwt'].callee
+        _callee: state['features/base/jwt'].callee
     };
 }
 

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { View } from 'react-native';
 
@@ -10,9 +11,9 @@ import { ColorPalette } from '../../styles';
  * specified one fails to load.
  *
  * XXX The relative path to the default/stock (image) file is defined by the
- * <tt>const</tt> <tt>DEFAULT_AVATAR_RELATIVE_PATH</tt>. Unfortunately, the
+ * {@code const} {@code DEFAULT_AVATAR_RELATIVE_PATH}. Unfortunately, the
  * packager of React Native cannot deal with it early enough for the following
- * <tt>require</tt> to succeed at runtime. Anyway, be sure to synchronize the
+ * {@code require} to succeed at runtime. Anyway, be sure to synchronize the
  * relative path on Web and mobile for the purposes of consistency.
  *
  * @private
@@ -34,14 +35,14 @@ export default class Avatar extends Component {
          * The optional style to add to the {@link Avatar} in order to customize
          * its base look (and feel).
          */
-        style: React.PropTypes.object,
+        style: PropTypes.object,
 
         /**
          * The URI of the {@link Avatar}.
          *
          * @type {string}
          */
-        uri: React.PropTypes.string
+        uri: PropTypes.string
     };
 
     /**
@@ -94,6 +95,7 @@ export default class Avatar extends Component {
             };
 
             if (assignState) {
+                // eslint-disable-next-line react/no-direct-mutation-state
                 this.state = nextState;
             } else {
                 this.setState(nextState);
@@ -133,6 +135,7 @@ export default class Avatar extends Component {
                         observer,
                         /* immutable */ true);
                 } else if (assignState) {
+                    // eslint-disable-next-line react/no-direct-mutation-state
                     this.state = {
                         ...this.state,
                         source: nextSource
@@ -145,9 +148,9 @@ export default class Avatar extends Component {
     }
 
     /**
-     * Notifies this <tt>Component</tt> that it will be unmounted and destroyed
+     * Notifies this {@code Component} that it will be unmounted and destroyed
      * and, most importantly, that it should no longer call
-     * {@link #setState(Object)}. <tt>Avatar</tt> needs it because it downloads
+     * {@link #setState(Object)}. {@code Avatar} needs it because it downloads
      * images via {@link ImageCache} which will asynchronously notify about
      * success.
      *
@@ -162,7 +165,7 @@ export default class Avatar extends Component {
      * Computes a hash over the URI and returns a HSL background color. We use
      * 75% as lightness, for nice pastel style colors.
      *
-     * @param {Object} props - The read-only React <tt>Component</tt> props from
+     * @param {Object} props - The read-only React {@code Component} props from
      * which the background color is to be generated.
      * @private
      * @returns {string} - The HSL CSS property.
@@ -184,7 +187,7 @@ export default class Avatar extends Component {
 
             for (let i = 0; i < uri.length; i++) {
                 hash = uri.charCodeAt(i) + ((hash << 5) - hash);
-                hash |= 0;  // Convert to 32-bit integer
+                hash |= 0; // Convert to 32-bit integer
             }
 
             /* eslint-enable no-bitwise */

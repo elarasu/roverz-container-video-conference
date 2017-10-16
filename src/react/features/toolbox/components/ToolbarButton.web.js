@@ -2,27 +2,16 @@
 
 import AKInlineDialog from '@atlaskit/inline-dialog';
 import { Tooltip } from '@atlaskit/tooltip';
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 import { translate } from '../../base/i18n';
 
+import { TOOLTIP_TO_POPUP_POSITION } from '../constants';
 import { isButtonEnabled } from '../functions';
-
 import StatelessToolbarButton from './StatelessToolbarButton';
 
 declare var APP: Object;
-
-/**
- * Mapping of tooltip positions to equivalent {@code AKInlineDialog} positions.
- *
- * @private
- */
-const TOOLTIP_TO_POPUP_POSITION = {
-    bottom: 'bottom center',
-    left: 'left middle',
-    top: 'top center',
-    right: 'right middle'
-};
 
 /**
  * Represents a button in Toolbar on React.
@@ -32,7 +21,6 @@ const TOOLTIP_TO_POPUP_POSITION = {
  */
 class ToolbarButton extends Component {
     button: Object;
-    _createRefToButton: Function;
 
     _onClick: Function;
 
@@ -61,28 +49,27 @@ class ToolbarButton extends Component {
         /**
          * Object describing button.
          */
-        button: React.PropTypes.object.isRequired,
+        button: PropTypes.object.isRequired,
 
         /**
          * Handler for component mount.
          */
-        onMount: React.PropTypes.func,
+        onMount: PropTypes.func,
 
         /**
          * Handler for component unmount.
          */
-        onUnmount: React.PropTypes.func,
+        onUnmount: PropTypes.func,
 
         /**
          * Translation helper function.
          */
-        t: React.PropTypes.func,
+        t: PropTypes.func,
 
         /**
          * Indicates the position of the tooltip.
          */
-        tooltipPosition:
-            React.PropTypes.oneOf([ 'bottom', 'left', 'right', 'top' ])
+        tooltipPosition: PropTypes.oneOf([ 'bottom', 'left', 'right', 'top' ])
     };
 
     /**
@@ -99,7 +86,6 @@ class ToolbarButton extends Component {
         };
 
         // Bind methods to save the context
-        this._createRefToButton = this._createRefToButton.bind(this);
         this._onClick = this._onClick.bind(this);
         this._onMouseOut = this._onMouseOut.bind(this);
         this._onMouseOver = this._onMouseOver.bind(this);
@@ -142,8 +128,7 @@ class ToolbarButton extends Component {
         const { button, t, tooltipPosition } = this.props;
         const props = {
             ...this.props,
-            onClick: this._onClick,
-            createRefToButton: this._createRefToButton
+            onClick: this._onClick
         };
 
         const buttonComponent = ( // eslint-disable-line no-extra-parens
@@ -153,7 +138,9 @@ class ToolbarButton extends Component {
                 onMouseOver = { this._onMouseOver }
                 position = { tooltipPosition }
                 visible = { this.state.showTooltip }>
-                <StatelessToolbarButton { ...props } />
+                <StatelessToolbarButton { ...props }>
+                    { this.props.children }
+                </StatelessToolbarButton>
             </Tooltip>
         );
         let children = buttonComponent;
@@ -193,18 +180,6 @@ class ToolbarButton extends Component {
     }
 
     /**
-     * Creates reference to current toolbar button.
-     *
-     * @param {HTMLElement} element - HTMLElement representing the toolbar
-     * button.
-     * @returns {void}
-     * @private
-     */
-    _createRefToButton(element: HTMLElement): void {
-        this.button = element;
-    }
-
-    /**
      * Parses the props and state to find any popup that should be displayed
      * and returns an object describing how the popup should display.
      *
@@ -228,21 +203,6 @@ class ToolbarButton extends Component {
             {
                 position: TOOLTIP_TO_POPUP_POSITION[tooltipPosition]
             });
-    }
-
-    /**
-     * If toolbar button should contain children elements
-     * renders them.
-     *
-     * @returns {ReactElement|null}
-     * @private
-     */
-    _renderInnerElementsIfRequired(): ReactElement<*> | null {
-        if (this.props.button.html) {
-            return this.props.button.html;
-        }
-
-        return null;
     }
 
     /**

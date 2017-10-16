@@ -1,4 +1,5 @@
 import 'es6-symbol/implement';
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { AppRegistry, Linking } from 'react-native';
 
@@ -22,9 +23,9 @@ class Root extends Component {
         /**
          * The URL, if any, with which the app was launched.
          */
-        url: React.PropTypes.oneOfType([
-            React.PropTypes.object,
-            React.PropTypes.string
+        url: PropTypes.oneOfType([
+            PropTypes.object,
+            PropTypes.string
         ]),
 
         /**
@@ -32,7 +33,7 @@ class Root extends Component {
          * page is rendered when the {@link App} is not at a location (URL)
          * identifying a Jitsi Meet conference/room.
          */
-        welcomePageEnabled: React.PropTypes.bool
+        welcomePageEnabled: PropTypes.bool
     };
 
     /**
@@ -44,6 +45,7 @@ class Root extends Component {
     constructor(props) {
         super(props);
         console.log('index.native', this.props);
+
         /**
          * The initial state of this Component.
          *
@@ -51,14 +53,14 @@ class Root extends Component {
          *     url: object|string
          * }}
          */
-        const jitsiURL = 'https://meet.jit.si/'+this.props.jitsiURL;                
+        const jitsiURL = 'https://meet.jit.si/'+this.props.jitsiURL;
         this.state = {
             /**
              * The URL, if any, with which the app was launched.
              *
              * @type {object|string}
              */
-            url: jitsiURL, //`https://meet.jit.si/${groupId}`,//this.props.url
+            url: jitsiURL, //this.props.url
         };
 
         // Handle the URL, if any, with which the app was launched. But props

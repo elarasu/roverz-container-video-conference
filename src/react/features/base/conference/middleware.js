@@ -1,8 +1,9 @@
-/* global APP */
+// @flow
+
 import UIEvents from '../../../../service/UI/UIEvents';
 
+import { sendEvent } from '../../analytics';
 import { CONNECTION_ESTABLISHED } from '../connection';
-import JitsiMeetJS from '../lib-jitsi-meet';
 import { setVideoMuted, VIDEO_MUTISM_AUTHORITY } from '../media';
 import {
     getLocalParticipant,
@@ -33,6 +34,10 @@ import {
     _handleParticipantError,
     _removeLocalTracksFromConference
 } from './functions';
+
+const logger = require('jitsi-meet-logger').getLogger(__filename);
+
+declare var APP: Object;
 
 /**
  * Implements the middleware of the feature base/conference.
@@ -118,8 +123,11 @@ function _connectionEstablished(store, next, action) {
 function _conferenceFailedOrLeft({ dispatch, getState }, next, action) {
     const result = next(action);
 
-    getState()['features/base/conference'].audioOnly
-        && dispatch(setAudioOnly(false));
+    if (getState()['features/base/conference'].audioOnly) {
+        sendEvent('audioonly.disabled');
+        logger.log('Audio only disabled');
+        dispatch(setAudioOnly(false));
+    }
 
     return result;
 }
@@ -182,13 +190,13 @@ function _pinParticipant(store, next, action) {
         let videoType;
 
         if ((participantById && participantById.local)
-            || (!id && pinnedParticipant && pinnedParticipant.local)) {
+                || (!id && pinnedParticipant && pinnedParticipant.local)) {
             videoType = 'local';
         } else {
             videoType = 'remote';
         }
 
-        JitsiMeetJS.analytics.sendEvent(
+        sendEvent(
                 `${actionName}.${videoType}`,
                 { value: conference.getParticipantCount() });
     }
@@ -299,14 +307,12 @@ function _setLastN(store, next, action) {
  * @returns {Object} The new state that is the result of the reduction of the
  * specified action.
  */
-function _setReceiveVideoQuality(store, next, action) {
-    const { audioOnly, conference }
-        = store.getState()['features/base/conference'];
+function _setReceiveVideoQuality({ dispatch, getState }, next, action) {
+    const { audioOnly, conference } = getState()['features/base/conference'];
 
     conference.setReceiverVideoConstraint(action.receiveVideoQuality);
-
     if (audioOnly) {
-        store.dispatch(toggleAudioOnly());
+        dispatch(toggleAudioOnly());
     }
 
     return next(action);
@@ -321,9 +327,9 @@ function _setReceiveVideoQuality(store, next, action) {
  * @private
  * @returns {Promise}
  */
-function _syncConferenceLocalTracksWithState(store, action) {
-    const state = store.getState()['features/base/conference'];
-    const conference = state.conference;
+function _syncConferenceLocalTracksWithState({ getState }, action) {
+    const state = getState()['features/base/conference'];
+    const { conference } = state;
     let promise;
 
     // XXX The conference may already be in the process of being left, that's
@@ -354,8 +360,8 @@ function _syncConferenceLocalTracksWithState(store, action) {
  * @returns {Object} The new state that is the result of the reduction of the
  * specified action.
  */
-function _syncReceiveVideoQuality(store, next, action) {
-    const state = store.getState()['features/base/conference'];
+function _syncReceiveVideoQuality({ getState }, next, action) {
+    const state = getState()['features/base/conference'];
 
     state.conference.setReceiverVideoConstraint(state.receiveVideoQuality);
 

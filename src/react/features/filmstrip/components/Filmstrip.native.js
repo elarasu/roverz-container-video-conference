@@ -1,5 +1,6 @@
 /* @flow */
 
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { ScrollView } from 'react-native';
 import { connect } from 'react-redux';
@@ -28,7 +29,7 @@ class Filmstrip extends Component {
          * @private
          * @type {Participant[]}
          */
-        _participants: React.PropTypes.array,
+        _participants: PropTypes.array,
 
         /**
          * The indicator which determines whether the filmstrip is visible.
@@ -36,7 +37,7 @@ class Filmstrip extends Component {
          * @private
          * @type {boolean}
          */
-        _visible: React.PropTypes.bool.isRequired
+        _visible: PropTypes.bool.isRequired
     };
 
     /**
@@ -52,19 +53,22 @@ class Filmstrip extends Component {
                 visible = { this.props._visible }>
                 <ScrollView
 
-                    // eslint-disable-next-line react/jsx-curly-spacing
-                    contentContainerStyle = {
-                        styles.filmstripScrollViewContentContainer
-                    } // eslint-disable-line react/jsx-curly-spacing
+                    contentContainerStyle
+                        = { styles.filmstripScrollViewContentContainer }
                     horizontal = { true }
                     showsHorizontalScrollIndicator = { false }
                     showsVerticalScrollIndicator = { false }>
                     {
+
+                        /* eslint-disable react/jsx-wrap-multilines */
+
                         this._sort(this.props._participants)
                             .map(p =>
                                 <Thumbnail
                                     key = { p.id }
                                     participant = { p } />)
+
+                        /* eslint-enable react/jsx-wrap-multilines */
                     }
                 </ScrollView>
             </Container>
@@ -72,13 +76,13 @@ class Filmstrip extends Component {
     }
 
     /**
-     * Sorts a specific array of <tt>Participant</tt>s in display order.
+     * Sorts a specific array of {@code Participant}s in display order.
      *
-     * @param {Participant[]} participants - The array of <tt>Participant</tt>s
+     * @param {Participant[]} participants - The array of {@code Participant}s
      * to sort in display order.
      * @private
      * @returns {Participant[]} A new array containing the elements of the
-     * specified <tt>participants</tt> array sorted in display order.
+     * specified {@code participants} array sorted in display order.
      */
     _sort(participants) {
         // XXX Array.prototype.sort() is not appropriate because (1) it operates

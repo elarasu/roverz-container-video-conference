@@ -1,3 +1,5 @@
+// @flow
+
 import jwtDecode from 'jwt-decode';
 
 import {
@@ -5,20 +7,24 @@ import {
     CONFERENCE_LEFT,
     CONFERENCE_WILL_LEAVE,
     SET_ROOM
-} from '../base/conference';
-import { SET_CONFIG } from '../base/config';
-import { SET_LOCATION_URL } from '../base/connection';
-import { LIB_INIT_ERROR } from '../base/lib-jitsi-meet';
+} from '../conference';
+import { SET_CONFIG } from '../config';
+import { SET_LOCATION_URL } from '../connection';
+import { LIB_INIT_ERROR } from '../lib-jitsi-meet';
 import {
     getLocalParticipant,
     getParticipantCount,
-    PARTICIPANT_JOINED
-} from '../base/participants';
-import { MiddlewareRegistry } from '../base/redux';
+    LOCAL_PARTICIPANT_DEFAULT_NAME,
+    PARTICIPANT_JOINED,
+    participantUpdated
+} from '../participants';
+import { MiddlewareRegistry } from '../redux';
 
 import { setCallOverlayVisible, setJWT } from './actions';
 import { SET_JWT } from './actionTypes';
 import { parseJWTFromURLParams } from './functions';
+
+declare var APP: Object;
 
 /**
  * Middleware to parse token data upon setting a new room URL.
@@ -72,14 +78,14 @@ function _maybeSetCallOverlayVisible({ dispatch, getState }, next, action) {
     const result = next(action);
 
     const state = getState();
-    const stateFeaturesJWT = state['features/jwt'];
+    const stateFeaturesJWT = state['features/base/jwt'];
     let callOverlayVisible;
 
     if (stateFeaturesJWT.callee) {
         const { conference, leaving, room } = state['features/base/conference'];
 
-        // XXX The CallOverlay is to be displayed/visible as soon as
-        // possible including even before the conference is joined.
+        // XXX The CallOverlay is to be displayed/visible as soon as possible
+        // including even before the conference is joined.
         if (room && (!conference || conference !== leaving)) {
             switch (action.type) {
             case CONFERENCE_FAILED:
@@ -98,10 +104,11 @@ function _maybeSetCallOverlayVisible({ dispatch, getState }, next, action) {
                 break;
 
             default: {
-                // The CallOverlay it to no longer be displayed/visible as soon
+                // The CallOverlay is to no longer be displayed/visible as soon
                 // as another participant joins.
-                callOverlayVisible = getParticipantCount(state) === 1
-                    && Boolean(getLocalParticipant(state));
+                callOverlayVisible
+                    = getParticipantCount(state) === 1
+                        && Boolean(getLocalParticipant(state));
 
                 // However, the CallDialog is not to be displayed/visible again
                 // after all remote participants leave.
@@ -117,6 +124,39 @@ function _maybeSetCallOverlayVisible({ dispatch, getState }, next, action) {
     dispatch(setCallOverlayVisible(callOverlayVisible));
 
     return result;
+}
+
+/**
+ * Overwrites the properties {@code avatarURL}, {@code email}, and {@code name}
+ * of the local participant stored in the redux state base/participants.
+ *
+ * @param {Store} store - The redux store.
+ * @param {Object} localParticipant - The {@code Participant} structure to
+ * overwrite the local participant stored in the redux store base/participants
+ * with.
+ * @private
+ * @returns {void}
+ */
+function _overwriteLocalParticipant(
+        { dispatch, getState },
+        { avatarURL, email, name }) {
+    let localParticipant;
+
+    if ((avatarURL || email || name)
+            && (localParticipant = getLocalParticipant(getState))) {
+        const newProperties: Object = { id: localParticipant.id };
+
+        if (avatarURL) {
+            newProperties.avatarURL = avatarURL;
+        }
+        if (email) {
+            newProperties.email = email;
+        }
+        if (name) {
+            newProperties.name = name;
+        }
+        dispatch(participantUpdated(newProperties));
+    }
 }
 
 /**
@@ -167,28 +207,108 @@ function _setJWT(store, next, action) {
     // eslint-disable-next-line no-unused-vars
     const { jwt, type, ...actionPayload } = action;
 
-    if (jwt && !Object.keys(actionPayload).length) {
-        const {
-            enableUserRolesBasedOnToken
-        } = store.getState()['features/base/config'];
+    if (!Object.keys(actionPayload).length) {
+        if (jwt) {
+            const {
+                enableUserRolesBasedOnToken
+            } = store.getState()['features/base/config'];
 
-        action.isGuest = !enableUserRolesBasedOnToken;
+            action.isGuest = !enableUserRolesBasedOnToken;
 
-        const jwtPayload = jwtDecode(jwt);
+            const jwtPayload = jwtDecode(jwt);
 
-        if (jwtPayload) {
-            const { context, iss } = jwtPayload;
+            if (jwtPayload) {
+                const { context, iss } = jwtPayload;
 
-            action.jwt = jwt;
-            action.issuer = iss;
-            if (context) {
-                action.callee = context.callee;
-                action.caller = context.user;
-                action.group = context.group;
-                action.server = context.server;
+                action.jwt = jwt;
+                action.issuer = iss;
+                if (context) {
+                    const user = _user2participant(context.user);
+
+                    action.callee = context.callee;
+                    action.group = context.group;
+                    action.server = context.server;
+                    action.user = user;
+
+                    user && _overwriteLocalParticipant(store, user);
+                }
             }
+        } else if (typeof APP === 'undefined') {
+            // The logic of restoring JWT overrides make sense only on mobile.
+            // On Web it should eventually be restored from storage, but there's
+            // no such use case yet.
+
+            const { user } = store.getState()['features/base/jwt'];
+
+            user && _undoOverwriteLocalParticipant(store, user);
         }
     }
 
     return _maybeSetCallOverlayVisible(store, next, action);
+}
+
+/**
+ * Undoes/resets the values overwritten by {@link _overwriteLocalParticipant}
+ * by either clearing them or setting to default values. Only the values that
+ * have not changed since the overwrite happened will be restored.
+ *
+ * NOTE Once it is possible to edit and save participant properties, this
+ * function should restore values from the storage instead.
+ *
+ * @param {Store} store - The redux store.
+ * @param {Object} localParticipant - The {@code Participant} structure used
+ * previously to {@link _overwriteLocalParticipant}.
+ * @private
+ * @returns {void}
+ */
+function _undoOverwriteLocalParticipant(
+        { dispatch, getState },
+        { avatarURL, name, email }) {
+    let localParticipant;
+
+    if ((avatarURL || name || email)
+            && (localParticipant = getLocalParticipant(getState))) {
+        const newProperties: Object = { id: localParticipant.id };
+
+        if (avatarURL === localParticipant.avatarURL) {
+            newProperties.avatarURL = undefined;
+        }
+        if (email === localParticipant.email) {
+            newProperties.email = undefined;
+        }
+        if (name === localParticipant.name) {
+            newProperties.name = LOCAL_PARTICIPANT_DEFAULT_NAME;
+        }
+        dispatch(participantUpdated(newProperties));
+    }
+}
+
+/**
+ * Converts the JWT {@code context.user} structure to the {@code Participant}
+ * structure stored in the redux state base/participants.
+ *
+ * @param {Object} user - The JWT {@code context.user} structure to convert.
+ * @private
+ * @returns {{
+ *     avatarURL: ?string,
+ *     email: ?string,
+ *     name: ?string
+ * }}
+ */
+function _user2participant({ avatar, avatarUrl, email, name }) {
+    const participant = {};
+
+    if (typeof avatarUrl === 'string') {
+        participant.avatarURL = avatarUrl.trim();
+    } else if (typeof avatar === 'string') {
+        participant.avatarURL = avatar.trim();
+    }
+    if (typeof email === 'string') {
+        participant.email = email.trim();
+    }
+    if (typeof name === 'string') {
+        participant.name = name.trim();
+    }
+
+    return Object.keys(participant).length ? participant : undefined;
 }

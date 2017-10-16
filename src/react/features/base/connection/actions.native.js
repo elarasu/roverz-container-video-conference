@@ -26,7 +26,7 @@ export function connect(id: ?string, password: ?string) {
     return (dispatch: Dispatch<*>, getState: Function) => {
         const state = getState();
         const options = _constructOptions(state);
-        const { issuer, jwt } = state['features/jwt'];
+        const { issuer, jwt } = state['features/base/jwt'];
         const connection
             = new JitsiMeetJS.JitsiConnection(
                 options.appId,
@@ -45,7 +45,7 @@ export function connect(id: ?string, password: ?string) {
             JitsiConnectionEvents.CONNECTION_FAILED,
             _onConnectionFailed);
 
-        connection.connect({
+        return connection.connect({
             id,
             password
         });
@@ -55,8 +55,8 @@ export function connect(id: ?string, password: ?string) {
          * disconnected.
          *
          * @param {string} message - Disconnect reason.
-         * @returns {void}
          * @private
+         * @returns {void}
          */
         function _onConnectionDisconnected(message: string) {
             connection.removeEventListener(
@@ -69,8 +69,8 @@ export function connect(id: ?string, password: ?string) {
         /**
          * Resolves external promise when connection is established.
          *
-         * @returns {void}
          * @private
+         * @returns {void}
          */
         function _onConnectionEstablished() {
             unsubscribe();
@@ -81,14 +81,18 @@ export function connect(id: ?string, password: ?string) {
          * Rejects external promise when connection fails.
          *
          * @param {JitsiConnectionErrors} err - Connection error.
-         * @param {string} msg - Error message supplied by lib-jitsi-meet.
-         * @returns {void}
+         * @param {string} [msg] - Error message supplied by lib-jitsi-meet.
+         * @param {Object} [credentials] - The invalid credentials that were
+         * used to authenticate and the authentication failed.
+         * @param {string} [credentials.jid] - The XMPP user's ID.
+         * @param {string} [credentials.password] - The XMPP user's password.
          * @private
+         * @returns {void}
          */
-        function _onConnectionFailed(err, msg) {
+        function _onConnectionFailed(err, msg, credentials) {
             unsubscribe();
             console.error('CONNECTION FAILED:', err, msg);
-            dispatch(connectionFailed(connection, err, msg));
+            dispatch(connectionFailed(connection, err, msg, credentials));
         }
 
         /**
@@ -163,31 +167,46 @@ export function connectionEstablished(connection: Object) {
     };
 }
 
+/* eslint-disable max-params */
+
 /**
  * Create an action for when the signaling connection could not be created.
  *
  * @param {JitsiConnection} connection - The JitsiConnection which failed.
  * @param {string} error - Error.
- * @param {string} message - Error message.
+ * @param {string} [message] - Error message.
+ * @param {Object} [credentials] - The invalid credentials that failed
+ * the authentication.
  * @public
  * @returns {{
  *     type: CONNECTION_FAILED,
  *     connection: JitsiConnection,
- *     error: string,
- *     message: string
+ *     error: Object
  * }}
  */
 export function connectionFailed(
         connection: Object,
         error: string,
-        message: ?string) {
+        message: ?string,
+        credentials: ?Object) {
     return {
         type: CONNECTION_FAILED,
         connection,
-        error,
-        message
+
+        // Make the error resemble an Error instance (to the extent that
+        // jitsi-meet needs it).
+        error: {
+            credentials:
+                credentials && Object.keys(credentials).length
+                    ? credentials
+                    : undefined,
+            message,
+            name: error
+        }
     };
 }
+
+/* eslint-enable max-params */
 
 /**
  * Constructs options to be passed to the constructor of {@code JitsiConnection}

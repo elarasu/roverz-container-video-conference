@@ -1,3 +1,5 @@
+// @flow
+
 import { ReducerRegistry, set } from '../redux';
 import { randomHexString } from '../util';
 
@@ -11,6 +13,7 @@ import {
 } from './actionTypes';
 import {
     LOCAL_PARTICIPANT_DEFAULT_ID,
+    LOCAL_PARTICIPANT_DEFAULT_NAME,
     PARTICIPANT_ROLE
 } from './constants';
 
@@ -25,10 +28,12 @@ import {
  * @property {boolean} pinned - If true, participant is currently a
  * "PINNED_ENDPOINT".
  * @property {boolean} dominantSpeaker - If this participant is the dominant
- * speaker in the (associated) conference, <tt>true</tt>; otherwise,
- * <tt>false</tt>.
+ * speaker in the (associated) conference, {@code true}; otherwise,
+ * {@code false}.
  * @property {string} email - Participant email.
  */
+
+declare var APP: Object;
 
 /**
  * These properties should not be bulk assigned when updating a particular
@@ -48,9 +53,9 @@ const PARTICIPANT_PROPS_TO_OMIT_WHEN_UPDATE
  * added/modified.
  * @param {JitsiConference} action.conference - Conference instance.
  * @private
- * @returns {Participant|undefined}
+ * @returns {Participant}
  */
-function _participant(state, action) {
+function _participant(state: Object = {}, action) {
     switch (action.type) {
     case DOMINANT_SPEAKER_CHANGED:
         // Only one dominant speaker is allowed.
@@ -98,8 +103,13 @@ function _participant(state, action) {
 
         // name
         if (!name) {
-            // TODO Get the from config and/or localized.
-            name = local ? 'me' : 'Fellow Jitster';
+            // TODO Get the display name from config and/or localized.
+            // XXX On Web the default value is handled in conference.js by
+            // getParticipantDisplayName.
+            if (typeof APP === 'undefined') {
+                name
+                    = local ? LOCAL_PARTICIPANT_DEFAULT_NAME : 'Fellow Jitster';
+            }
         }
 
         return {
@@ -163,17 +173,17 @@ function _participant(state, action) {
  */
 ReducerRegistry.register('features/base/participants', (state = [], action) => {
     switch (action.type) {
-    case PARTICIPANT_JOINED:
-        return [ ...state, _participant(undefined, action) ];
-
-    case PARTICIPANT_LEFT:
-        return state.filter(p => p.id !== action.participant.id);
-
     case DOMINANT_SPEAKER_CHANGED:
     case PARTICIPANT_ID_CHANGED:
     case PARTICIPANT_UPDATED:
     case PIN_PARTICIPANT:
         return state.map(p => _participant(p, action));
+
+    case PARTICIPANT_JOINED:
+        return [ ...state, _participant(undefined, action) ];
+
+    case PARTICIPANT_LEFT:
+        return state.filter(p => p.id !== action.participant.id);
 
     default:
         return state;

@@ -1,6 +1,7 @@
 /* @flow */
 
 import { setConfigFromURLParams } from '../../base/config';
+import { toState } from '../../base/redux';
 import { loadScript } from '../../base/util';
 
 import JitsiMeetJS from './_';
@@ -32,6 +33,26 @@ export function createLocalTrack(type: string, deviceId: string) {
 }
 
 /**
+ * Determines whether analytics is enabled in a specific redux {@code store}.
+ *
+ * @param {Function|Object} stateful - The redux store, state, or
+ * {@code getState} function.
+ * @returns {boolean} If analytics is enabled, {@code true}; {@code false},
+ * otherwise.
+ */
+export function isAnalyticsEnabled(stateful: Function | Object) {
+    const {
+        analyticsScriptUrls,
+        disableThirdPartyRequests
+    } = toState(stateful)['features/base/config'];
+
+    return (
+        !disableThirdPartyRequests
+            && Array.isArray(analyticsScriptUrls)
+            && Boolean(analyticsScriptUrls.length));
+}
+
+/**
  * Determines whether a specific JitsiConnectionErrors instance indicates a
  * fatal JitsiConnection error.
  *
@@ -39,12 +60,16 @@ export function createLocalTrack(type: string, deviceId: string) {
  * that category. I've currently named the category fatal because it appears to
  * be used in the cases of unrecoverable errors that necessitate a reload.
  *
- * @param {string} error - The JitsiConnectionErrors instance to
- * categorize/classify.
+ * @param {Object|string} error - The JitsiConnectionErrors instance to
+ * categorize/classify or an Error-like object.
  * @returns {boolean} True if the specified JitsiConnectionErrors instance
  * indicates a fatal JitsiConnection error; otherwise, false.
  */
-export function isFatalJitsiConnectionError(error: string) {
+export function isFatalJitsiConnectionError(error: Object | string) {
+    if (typeof error !== 'string') {
+        error = error.name; // eslint-disable-line no-param-reassign
+    }
+
     return (
         error === JitsiConnectionErrors.CONNECTION_DROPPED_ERROR
             || error === JitsiConnectionErrors.OTHER_ERROR
@@ -97,24 +122,4 @@ export function loadConfig(url: string) {
     });
 
     return promise;
-}
-
-/**
- * Evaluates whether analytics is enabled or not based on
- * the redux {@code store}.
- *
- * @param {Store} store - The redux store in which the specified {@code action}
- * is being dispatched.
- * @returns {boolean} True if analytics is enabled, false otherwise.
- */
-export function isAnalyticsEnabled({ getState }: { getState: Function }) {
-    const {
-        analyticsScriptUrls,
-        disableThirdPartyRequests
-    } = getState()['features/base/config'];
-
-    const scriptURLs = Array.isArray(analyticsScriptUrls)
-        ? analyticsScriptUrls : [];
-
-    return Boolean(scriptURLs.length) && !disableThirdPartyRequests;
 }

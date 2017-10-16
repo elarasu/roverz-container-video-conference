@@ -1,6 +1,4 @@
-/* global APP */
-
-import UIEvents from '../../../service/UI/UIEvents';
+// @flow
 
 import {
     CONFERENCE_FAILED,
@@ -9,8 +7,11 @@ import {
 } from '../base/conference';
 import { JitsiConferenceErrors } from '../base/lib-jitsi-meet';
 import { MiddlewareRegistry } from '../base/redux';
+import UIEvents from '../../../service/UI/UIEvents';
 
-import { _showPasswordDialog } from './actions';
+import { _openPasswordRequiredPrompt } from './actions';
+
+declare var APP: Object;
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
@@ -26,8 +27,14 @@ MiddlewareRegistry.register(store => next => action => {
     case CONFERENCE_FAILED: {
         const { conference, error } = action;
 
-        if (conference && error === JitsiConferenceErrors.PASSWORD_REQUIRED) {
-            store.dispatch(_showPasswordDialog(conference));
+        if (conference
+                && error.name === JitsiConferenceErrors.PASSWORD_REQUIRED) {
+            if (typeof error.recoverable === 'undefined') {
+                error.recoverable = true;
+            }
+            if (error.recoverable) {
+                store.dispatch(_openPasswordRequiredPrompt(conference));
+            }
         }
         break;
     }

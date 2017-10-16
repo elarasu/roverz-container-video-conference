@@ -18,7 +18,7 @@ class LocalVideoTrackUnderlay extends Component {
     state: {
 
         /**
-         * The style of <tt>LocalVideoTrackUnderlay</tt> which is a combination
+         * The style of {@code LocalVideoTrackUnderlay} which is a combination
          * of its default style and the consumer-specified style.
          */
         style: Object
@@ -72,6 +72,7 @@ class LocalVideoTrackUnderlay extends Component {
             };
 
             if (assignState) {
+                // eslint-disable-next-line react/no-direct-mutation-state
                 this.state = nextState;
             } else {
                 this.setState(nextState);

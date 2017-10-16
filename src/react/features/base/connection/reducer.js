@@ -76,8 +76,7 @@ function _connectionEstablished(
     return assign(state, {
         connecting: undefined,
         connection,
-        error: undefined,
-        errorMessage: undefined
+        error: undefined
     });
 }
 
@@ -93,10 +92,9 @@ function _connectionEstablished(
  */
 function _connectionFailed(
         state: Object,
-        { connection, error, message }: {
+        { connection, error }: {
             connection: Object,
-            error: string,
-            message: ?string
+            error: Object | string
         }) {
     if (state.connection && state.connection !== connection) {
         return state;
@@ -105,8 +103,7 @@ function _connectionFailed(
     return assign(state, {
         connecting: undefined,
         connection: undefined,
-        error,
-        errorMessage: message
+        error
     });
 }
 
@@ -125,8 +122,7 @@ function _connectionWillConnect(
         { connection }: { connection: Object }) {
     return assign(state, {
         connecting: connection,
-        error: undefined,
-        errorMessage: undefined
+        error: undefined
     });
 }
 
@@ -162,8 +158,8 @@ function _constructOptions(locationURL: URL) {
 
     return {
         bosh:
-            `${String(protocol)}//${domain}${locationURI.contextRoot || '/'
-                }http-bind`,
+            `${String(protocol)}//${domain}${
+                locationURI.contextRoot || '/'}http-bind`,
         hosts: {
             domain,
 
