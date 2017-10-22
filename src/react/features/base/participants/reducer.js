@@ -11,11 +11,7 @@ import {
     PARTICIPANT_UPDATED,
     PIN_PARTICIPANT
 } from './actionTypes';
-import {
-    LOCAL_PARTICIPANT_DEFAULT_ID,
-    LOCAL_PARTICIPANT_DEFAULT_NAME,
-    PARTICIPANT_ROLE
-} from './constants';
+import { LOCAL_PARTICIPANT_DEFAULT_ID, PARTICIPANT_ROLE } from './constants';
 
 /**
  * Participant object.
@@ -72,7 +68,7 @@ function _participant(state: Object = {}, action) {
         break;
 
     case PARTICIPANT_JOINED: {
-        const participant = action.participant; // eslint-disable-line no-shadow
+        const { participant } = action; // eslint-disable-line no-shadow
         const {
             avatarURL,
             connectionStatus,
@@ -80,10 +76,11 @@ function _participant(state: Object = {}, action) {
             email,
             isBot,
             local,
+            name,
             pinned,
             role
         } = participant;
-        let { avatarID, id, name } = participant;
+        let { avatarID, id } = participant;
 
         // avatarID
         //
@@ -99,17 +96,6 @@ function _participant(state: Object = {}, action) {
         // random ID.
         if (!id && local) {
             id = LOCAL_PARTICIPANT_DEFAULT_ID;
-        }
-
-        // name
-        if (!name) {
-            // TODO Get the display name from config and/or localized.
-            // XXX On Web the default value is handled in conference.js by
-            // getParticipantDisplayName.
-            if (typeof APP === 'undefined') {
-                name
-                    = local ? LOCAL_PARTICIPANT_DEFAULT_NAME : 'Fellow Jitster';
-            }
         }
 
         return {
@@ -128,9 +114,9 @@ function _participant(state: Object = {}, action) {
     }
 
     case PARTICIPANT_UPDATED: {
-        const participant = action.participant; // eslint-disable-line no-shadow
-        const { local } = participant;
+        const { participant } = action; // eslint-disable-line no-shadow
         let { id } = participant;
+        const { local } = participant;
 
         if (!id && local) {
             id = LOCAL_PARTICIPANT_DEFAULT_ID;

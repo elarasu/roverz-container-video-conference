@@ -1,4 +1,4 @@
-import { sendEvent } from '../../analytics';
+import { sendAnalyticsEvent } from '../../analytics';
 import { JitsiTrackErrors, JitsiTrackEvents } from '../lib-jitsi-meet';
 import {
     CAMERA_FACING_MODE,
@@ -159,12 +159,13 @@ export function replaceLocalTrack(oldTrack, newTrack, conference) {
                                     : setAudioMuted;
                             const isMuted = newTrack.isMuted();
 
-                            sendEvent(`replacetrack.${newTrack.getType()}.${
+                            sendAnalyticsEvent(`replacetrack.${
+                                newTrack.getType()}.${
                                 isMuted ? 'muted' : 'unmuted'}`);
                             logger.log(`Replace ${newTrack.getType()} track - ${
                                 isMuted ? 'muted' : 'unmuted'}`);
 
-                            return dispatch(setMuted());
+                            return dispatch(setMuted(isMuted));
                         }
                     })
                     .then(() => {

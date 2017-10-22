@@ -14,7 +14,6 @@ import { LIB_INIT_ERROR } from '../lib-jitsi-meet';
 import {
     getLocalParticipant,
     getParticipantCount,
-    LOCAL_PARTICIPANT_DEFAULT_NAME,
     PARTICIPANT_JOINED,
     participantUpdated
 } from '../participants';
@@ -179,12 +178,9 @@ function _setConfigOrLocationURL({ dispatch, getState }, next, action) {
     const result = next(action);
 
     const { locationURL } = getState()['features/base/connection'];
-    let jwt;
 
-    if (locationURL) {
-        jwt = parseJWTFromURLParams(locationURL);
-    }
-    dispatch(setJWT(jwt));
+    dispatch(
+        setJWT(locationURL ? parseJWTFromURLParams(locationURL) : undefined));
 
     return result;
 }
@@ -277,7 +273,7 @@ function _undoOverwriteLocalParticipant(
             newProperties.email = undefined;
         }
         if (name === localParticipant.name) {
-            newProperties.name = LOCAL_PARTICIPANT_DEFAULT_NAME;
+            newProperties.name = undefined;
         }
         dispatch(participantUpdated(newProperties));
     }
